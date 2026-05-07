@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoTrack — Smart E-Waste Management</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Clash+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ─── TOKENS ─────────────────────────────────── */
+:root {
+  --bg:       #06080a;
+  --s0:       #0d1117;
+  --s1:       #111820;
+  --s2:       #162030;
+  --border:   #1e2d3d;
+  --green:    #00e676;
+  --green-d:  #00b359;
+  --amber:    #ffb300;
+  --red:      #ff3d3d;
+  --blue:     #29b6f6;
+  --text:     #d0e8ff;
+  --muted:    #4a6480;
+  --mono: 'IBM Plex Mono', monospace;
+  --display: 'Clash Display', 'Syne', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--display);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* Grid noise texture */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,230,118,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,230,118,.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── NAV ────────────────────────────────────── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(6,8,10,.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px;
+}
+
+.nav-brand {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 20px; font-weight: 700; color: #fff;
+}
+
+.nav-brand .dot {
+  width: 10px; height: 10px;
+  background: var(--green);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--green);
+  animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%,100% { opacity: 1; } 50% { opacity: .3; }
+}
+
+.nav-badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: rgba(0,230,118,.1);
+  border: 1px solid rgba(0,230,118,.3);
+  color: var(--green);
+  border-radius: 20px;
+  padding: 4px 12px;
+}
+
+/* ─── LAYOUT ─────────────────────────────────── */
+.page { max-width: 960px; margin: 0 auto; padding: 32px 20px; position: relative; z-index: 1; }
+
+/* ─── TABS ───────────────────────────────────── */
+.tabs {
+  display: flex; gap: 4px;
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 28px;
+  width: fit-content;
+}
+
+.tab {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: all .2s;
+}
+
+.tab.active {
+  background: var(--s2);
+  color: var(--green);
+  border: 1px solid var(--border);
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ─── CARDS ──────────────────────────────────── */
+.card {
+  background: var(--s0);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.card-head {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dot-sm {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ─── LIFECYCLE TIMELINE ─────────────────────── */
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 28px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.tl-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 90px;
+  position: relative;
+}
+
+.tl-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: calc(50% + 18px);
+  width: calc(100% - 36px);
+  height: 2px;
+  background: var(--border);
+  transition: background .5s;
+}
+
+.tl-step.done:not(:last-child)::after { background: var(--green-d); }
+
+.tl-icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  background: var(--s1);
+  transition: all .4s;
+  z-index: 1;
+}
+
+.tl-step.done .tl-icon {
+  border-color: var(--green);
+  background: rgba(0,230,118,.1);
+  box-shadow: 0 0 12px rgba(0,230,118,.3);
+}
+
+.tl-step.current .tl-icon {
+  border-color: var(--amber);
+  background: rgba(255,179,0,.1);
+  box-shadow: 0 0 12px rgba(255,179,0,.4);
+  animation: pulse-amber 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-amber {
+  0%,100% { box-shadow: 0 0 6px rgba(255,179,0,.3); }
+  50%      { box-shadow: 0 0 18px rgba(255,179,0,.6); }
+}
+
+.tl-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+  letter-spacing: .5px;
+}
+
+.tl-step.done .tl-label   { color: var(--green); }
+.tl-step.current .tl-label { color: var(--amber); }
+
+/* ─── BIN VISUAL ─────────────────────────────── */
+.bin-section {
+  display: flex; gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.bin-wrap {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 8px;
+}
+
+.bin-3d {
+  width: 90px;
+  position: relative;
+}
+
+.bin-body {
+  width: 80px;
+  height: 130px;
+  border: 2px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 14px 14px;
+  background: var(--s1);
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.bin-fill-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  border-radius: 0 0 12px 12px;
+  transition: height 1s ease, background .5s;
+}
+
+.bin-lid {
+  width: 90px; height: 12px;
+  background: var(--s2);
+  border: 2px solid var(--border);
+  border-radius: 6px 6px 0 0;
+  margin: 0 auto;
+}
+
+.bin-lid.open {
+  transform: rotate(-35deg) translateX(-10px);
+  transition: transform .4s ease;
+  transform-origin: right center;
+}
+
+.bin-pct {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 600;
+  transition: color .5s;
+}
+
+.bin-state-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ─── INFO GRID ──────────────────────────────── */
+.info-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  min-width: 220px;
+}
+
+.info-box {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.info-val {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1;
+}
+
+.info-lbl {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 5px;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ─── ACTION BUTTONS ─────────────────────────── */
+.actions {
+  display: flex; gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.btn {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: all .15s;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.btn:active { transform: scale(.97); }
+
+.btn-green { background: var(--green); color: #000; font-weight: 600; }
+.btn-green:hover { background: var(--green-d); }
+
+.btn-amber { background: rgba(255,179,0,.15); color: var(--amber); border: 1px solid rgba(255,179,0,.3); }
+.btn-amber:hover { background: rgba(255,179,0,.25); }
+
+.btn-red { background: rgba(255,61,61,.15); color: var(--red); border: 1px solid rgba(255,61,61,.3); }
+.btn-red:hover { background: rgba(255,61,61,.25); }
+
+.btn-blue { background: rgba(41,182,246,.15); color: var(--blue); border: 1px solid rgba(41,182,246,.3); }
+.btn-blue:hover { background: rgba(41,182,246,.25); }
+
+/* ─── SMS LOG ────────────────────────────────── */
+.sms-list {
+  display: flex; flex-direction: column; gap: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.sms-list::-webkit-scrollbar { width: 3px; }
+.sms-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.sms-item {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex; gap: 14px;
+  animation: slideIn .3s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.sms-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+
+.sms-body { flex: 1; }
+
+.sms-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 4px;
+}
+
+.sms-to {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.sms-time {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.sms-msg {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.sms-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-family: var(--mono);
+  letter-spacing: 1px;
+}
+
+.badge-full   { background: rgba(255,61,61,.15);   color: var(--red);   border: 1px solid rgba(255,61,61,.3); }
+.badge-ok     { background: rgba(0,230,118,.1);    color: var(--green); border: 1px solid rgba(0,230,118,.3); }
+.badge-hazard { background: rgba(255,179,0,.1);    color: var(--amber); border: 1px solid rgba(255,179,0,.3); }
+
+/* ─── VALIDATE TAB ───────────────────────────── */
+.validate-wrap {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.code-input-row {
+  display: flex; gap: 10px; margin-bottom: 16px;
+}
+
+input[type=text] {
+  flex: 1;
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-family: var(--mono);
+  font-size: 15px;
+  color: var(--green);
+  letter-spacing: 2px;
+  outline: none;
+  transition: border-color .2s;
+}
+
+input[type=text]::placeholder { color: var(--muted); }
+input[type=text]:focus { border-color: var(--green); }
+
+#v-result {
+  border-radius: 12px;
+  padding: 18px;
+  font-family: var(--mono);
+  font-size: 13px;
+  display: none;
+  animation: fadeUp .3s ease;
+}
+
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; } }
+
+#v-result.ok  { background: rgba(0,230,118,.07); border: 1px solid rgba(0,230,118,.3); color: var(--green); }
+#v-result.err { background: rgba(255,61,61,.07); border: 1px solid rgba(255,61,61,.3);  color: var(--red); }
+
+.v-pts {
+  font-family: var(--display);
+  font-size: 38px;
+  font-weight: 700;
+  color: #fff;
+  margin: 8px 0;
+}
+
+.v-pts span { color: var(--green); }
+
+/* ─── COLLECTION HISTORY ─────────────────────── */
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.history-table th {
+  text-align: left;
+  padding: 10px 12px;
+  color: var(--muted);
+  font-weight: 400;
+  letter-spacing: 1px;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(30,45,61,.5);
+  vertical-align: middle;
+}
+
+.history-table tr:last-child td { border-bottom: none; }
+
+.history-table tr { transition: background .15s; }
+.history-table tr:hover td { background: var(--s1); }
+
+/* ─── STATS BANNER ───────────────────────────── */
+.stats-banner {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.stat-tile {
+  background: var(--s0);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  text-align: center;
+}
+
+.stat-tile .big {
+  font-family: var(--display);
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.stat-tile .big.green { color: var(--green); }
+.stat-tile .big.amber { color: var(--amber); }
+.stat-tile .big.blue  { color: var(--blue);  }
+
+.stat-tile .lbl {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 6px;
+}
+
+/* ─── TOAST ──────────────────────────────────── */
+#toast {
+  position: fixed;
+  bottom: 28px; right: 28px;
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0;
+  transform: translateY(16px);
+  transition: all .3s;
+  z-index: 200;
+  max-width: 300px;
+}
+
+#toast.show { opacity: 1; transform: none; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="dot"></div>
+    EcoTrack
+  </div>
+  <div class="nav-badge">ESP32 · Live System</div>
+</nav>
+
+<div class="page">
+
+  <!-- STATS BANNER -->
+  <div class="stats-banner">
+    <div class="stat-tile">
+      <div class="big green" id="s-fill">0%</div>
+      <div class="lbl">Current Fill</div>
+    </div>
+    <div class="stat-tile">
+      <div class="big" id="s-collections">0</div>
+      <div class="lbl">Collections</div>
+    </div>
+    <div class="stat-tile">
+      <div class="big amber" id="s-drops">0</div>
+      <div class="lbl">Total Drops</div>
+    </div>
+    <div class="stat-tile">
+      <div class="big blue" id="s-kg">0.0</div>
+      <div class="lbl">kg E-Waste</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('monitor')">🗑 Bin Monitor</button>
+    <button class="tab" onclick="showTab('sms')">📱 SMS Log</button>
+    <button class="tab" onclick="showTab('validate')">✅ Validate Drop</button>
+    <button class="tab" onclick="showTab('history')">📋 History</button>
+  </div>
+
+  <!-- ═══ TAB: MONITOR ════════════════════════ -->
+  <div class="tab-panel active" id="panel-monitor">
+
+    <!-- LIFECYCLE TIMELINE -->
+    <div class="card">
+      <div class="card-head"><span class="dot-sm" style="background:var(--green)"></span>Collection Lifecycle</div>
+      <div class="timeline" id="timeline">
+        <div class="tl-step done" id="tl-0">
+          <div class="tl-icon">📥</div>
+          <div class="tl-label">Drops<br>Added</div>
+        </div>
+        <div class="tl-step" id="tl-1">
+          <div class="tl-icon">🚨</div>
+          <div class="tl-label">Bin<br>Full</div>
+        </div>
+        <div class="tl-step" id="tl-2">
+          <div class="tl-icon">📱</div>
+          <div class="tl-label">SMS<br>Sent</div>
+        </div>
+        <div class="tl-step" id="tl-3">
+          <div class="tl-icon">🚛</div>
+          <div class="tl-label">Collector<br>Arrives</div>
+        </div>
+        <div class="tl-step" id="tl-4">
+          <div class="tl-icon">🗑</div>
+          <div class="tl-label">Bin<br>Emptied</div>
+        </div>
+        <div class="tl-step" id="tl-5">
+          <div class="tl-icon">✅</div>
+          <div class="tl-label">Reset &<br>Ready</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BIN STATUS -->
+    <div class="card">
+      <div class="card-head"><span class="dot-sm" style="background:var(--blue)"></span>Real-Time Bin Status</div>
+      <div class="bin-section">
+        <div class="bin-wrap">
+          <div class="bin-3d">
+            <div class="bin-lid" id="binLid"></div>
+            <div class="bin-body">
+              <div class="bin-fill-bar" id="binFill"></div>
+            </div>
+          </div>
+          <div class="bin-pct" id="binPct">0%</div>
+          <div class="bin-state-tag" id="stateTag" style="background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.3)">NORMAL</div>
+        </div>
+        <div class="info-grid">
+          <div class="info-box">
+            <div class="info-val" id="infoTemp">28°C</div>
+            <div class="info-lbl">Temperature</div>
+          </div>
+          <div class="info-box">
+            <div class="info-val" id="infoDist">30 cm</div>
+            <div class="info-lbl">Distance</div>
+          </div>
+          <div class="info-box">
+            <div class="info-val" id="infoDrops">0</div>
+            <div class="info-lbl">This Cycle</div>
+          </div>
+          <div class="info-box">
+            <div class="info-val" id="infoAlerts">0</div>
+            <div class="info-lbl">SMS Alerts</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIMULATE CONTROLS -->
+      <div class="actions">
+        <button class="btn btn-green" onclick="simDrop()">📦 Simulate Drop</button>
+        <button class="btn btn-amber" onclick="simFull()">🚨 Simulate Full</button>
+        <button class="btn btn-blue" onclick="simCollect()">🚛 Simulate Collection</button>
+        <button class="btn btn-red" onclick="simTempAlert()">🔥 Temp Alert</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB: SMS ════════════════════════════ -->
+  <div class="tab-panel" id="panel-sms">
+    <div class="card">
+      <div class="card-head"><span class="dot-sm" style="background:var(--amber)"></span>SMS Alert Log (Simulated)</div>
+      <div class="sms-list" id="smsList">
+        <div style="font-family:var(--mono);font-size:12px;color:var(--muted);padding:12px 0;">
+          No alerts yet. Use the Monitor tab to simulate events.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB: VALIDATE ═══════════════════════ -->
+  <div class="tab-panel" id="panel-validate">
+    <div class="validate-wrap">
+      <div class="card">
+        <div class="card-head"><span class="dot-sm" style="background:var(--green)"></span>Validate Drop Code</div>
+        <p style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:18px;">
+          Enter the code shown on the bin's display after dropping your e-waste.<br>
+          Format: <strong style="color:var(--text)">EW-XXXX-N</strong>
+        </p>
+        <div class="code-input-row">
+          <input type="text" id="codeInput" placeholder="EW-1234-0" maxlength="15">
+          <button class="btn btn-green" onclick="validateCode()">Validate</button>
+        </div>
+        <div id="v-result"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="dot-sm" style="background:var(--blue)"></span>Your Rewards</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="info-box">
+            <div class="info-val" style="color:var(--green)" id="myPoints">0</div>
+            <div class="info-lbl">Points</div>
+          </div>
+          <div class="info-box">
+            <div class="info-val" style="color:var(--blue)" id="myDrops">0</div>
+            <div class="info-lbl">My Drops</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB: HISTORY ════════════════════════ -->
+  <div class="tab-panel" id="panel-history">
+    <div class="card">
+      <div class="card-head"><span class="dot-sm" style="background:var(--blue)"></span>Collection History</div>
+      <table class="history-table" id="historyTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Time</th>
+            <th>Peak Fill</th>
+            <th>Drops</th>
+            <th>kg Collected</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <tr>
+            <td colspan="6" style="color:var(--muted);font-family:var(--mono);font-size:12px;padding:20px 12px;">
+              No collections recorded yet.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════
+const S = {
+  fill:          0,
+  temp:          28,
+  drops:         0,
+  collections:   0,
+  totalKg:       0,
+  alerts:        0,
+  usedCodes:     new Set(),
+  myPoints:      0,
+  myDrops:       0,
+  lifecycle:     0,   // 0-5 timeline steps
+  smsList:       [],
+  collectionLog: [],
+  currentCyclePeak: 0,
+  currentCycleDrops: 0,
+};
+
+const TIMELINE_STEPS = 6;
+
+// ════════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════════
+function now() {
+  return new Date().toLocaleTimeString('en-IN', { hour12: false });
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ════════════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════════════
+function render() {
+  const fill   = S.fill;
+  const color  = fill >= 80 ? 'var(--red)' : fill >= 50 ? 'var(--amber)' : 'var(--green)';
+  const colorD = fill >= 80 ? '#660000' : fill >= 50 ? '#664400' : '#004422';
+
+  // Bin visual
+  document.getElementById('binFill').style.cssText =
+    `height:${fill}%; background: linear-gradient(to top, ${color}30, ${color}18); border-top: 2px solid ${color};`;
+  document.getElementById('binPct').style.color = color;
+  document.getElementById('binPct').textContent = fill + '%';
+
+  // State tag
+  const stateMap = [
+    { label: 'NORMAL',     bg: 'rgba(0,230,118,.1)',   c: 'var(--green)' , b: 'rgba(0,230,118,.3)' },
+    { label: 'FULL',       bg: 'rgba(255,61,61,.1)',   c: 'var(--red)',    b: 'rgba(255,61,61,.3)' },
+    { label: 'ALERT SENT', bg: 'rgba(255,61,61,.15)',  c: 'var(--red)',    b: 'rgba(255,61,61,.4)' },
+    { label: 'COLLECTING', bg: 'rgba(255,179,0,.1)',   c: 'var(--amber)',  b: 'rgba(255,179,0,.3)' },
+    { label: 'RESETTING',  bg: 'rgba(41,182,246,.1)',  c: 'var(--blue)',   b: 'rgba(41,182,246,.3)' },
+    { label: 'READY',      bg: 'rgba(0,230,118,.1)',   c: 'var(--green)',  b: 'rgba(0,230,118,.3)' },
+  ];
+  const st = stateMap[Math.min(S.lifecycle, 5)];
+  const tag = document.getElementById('stateTag');
+  tag.textContent = st.label;
+  tag.style.cssText = `background:${st.bg};color:${st.c};border:1px solid ${st.b};`;
+
+  // Lid open when dropping
+  document.getElementById('binLid').className = 'bin-lid' + (S.lifecycle === 0 ? '' : '');
+
+  // Info boxes
+  document.getElementById('infoTemp').textContent = S.temp.toFixed(1) + '°C';
+  document.getElementById('infoDist').textContent = (30 - (fill * 0.28)).toFixed(1) + ' cm';
+  document.getElementById('infoDrops').textContent = S.currentCycleDrops;
+  document.getElementById('infoAlerts').textContent = S.alerts;
+
+  // Stats banner
+  document.getElementById('s-fill').textContent       = fill + '%';
+  document.getElementById('s-collections').textContent = S.collections;
+  document.getElementById('s-drops').textContent       = S.drops;
+  document.getElementById('s-kg').textContent          = S.totalKg.toFixed(1);
+
+  // Timeline
+  for (let i = 0; i < TIMELINE_STEPS; i++) {
+    const el = document.getElementById('tl-' + i);
+    el.className = 'tl-step';
+    if (i < S.lifecycle)  el.classList.add('done');
+    if (i === S.lifecycle) el.classList.add('current');
+  }
+
+  // My rewards
+  document.getElementById('myPoints').textContent = S.myPoints;
+  document.getElementById('myDrops').textContent  = S.myDrops;
+}
+
+// ════════════════════════════════════════════════
+//  SMS
+// ════════════════════════════════════════════════
+function addSMS(to, msg, type) {
+  S.alerts++;
+  S.smsList.unshift({ to, msg, type, time: now() });
+
+  const list = document.getElementById('smsList');
+  const icons = { full: '🚨', ok: '✅', hazard: '🔥' };
+  const item = document.createElement('div');
+  item.className = 'sms-item';
+  item.innerHTML = `
+    <div class="sms-icon">${icons[type] || '📱'}</div>
+    <div class="sms-body">
+      <div class="sms-header">
+        <span class="sms-to">TO: ${to}</span>
+        <span class="sms-badge badge-${type}">${type.toUpperCase()}</span>
+        <span class="sms-time">${now()}</span>
+      </div>
+      <div class="sms-msg">${msg}</div>
+    </div>
+  `;
+  if (list.children[0]?.textContent?.includes('No alerts')) list.innerHTML = '';
+  list.prepend(item);
+}
+
+// ════════════════════════════════════════════════
+//  SIMULATE ACTIONS
+// ════════════════════════════════════════════════
+function simDrop() {
+  if (S.lifecycle > 1) { toast('⚠ Bin is full or being collected'); return; }
+  S.fill = Math.min(100, S.fill + Math.floor(Math.random() * 12) + 6);
+  S.currentCycleDrops++;
+  S.drops++;
+  S.currentCyclePeak = Math.max(S.currentCyclePeak, S.fill);
+  S.lifecycle = 0;
+  if (S.fill >= 80) autoFull();
+  render();
+  toast('📦 E-waste drop recorded! Code: EW-' + Math.floor(Math.random()*9999) + '-' + S.drops);
+}
+
+function autoFull() {
+  S.lifecycle = 1;
+  setTimeout(() => {
+    S.lifecycle = 2;
+    addSMS('+91-9876543210',
+      `🗑 E-Waste Bin #1 is ${S.fill}% full! Please collect — Block A, Lab 3.`, 'full');
+    addSMS('+91-8765432109',
+      `[BACKUP] Bin #1 FULL (${S.fill}%). Collector notified.`, 'full');
+    render();
+    toast('📱 SMS alerts sent to collector!');
+  }, 1500);
+}
+
+function simFull() {
+  S.fill = 85;
+  S.currentCyclePeak = 85;
+  autoFull();
+  render();
+}
+
+function simCollect() {
+  if (S.lifecycle < 2) { toast('Bin is not full yet. Simulate Full first.'); return; }
+  S.lifecycle = 3;
+  render();
+  toast('🚛 Collector arrived! Emptying bin...');
+
+  let f = S.fill;
+  const empty = setInterval(() => {
+    f -= 8;
+    S.fill = Math.max(0, f);
+    render();
+    if (S.fill <= 5) {
+      clearInterval(empty);
+      S.fill = 0;
+      S.collections++;
+      S.lifecycle = 4;
+
+      const kg = (S.currentCycleDrops * 0.35 + Math.random() * 0.5).toFixed(2);
+      S.totalKg += parseFloat(kg);
+
+      S.collectionLog.unshift({
+        id:   S.collections,
+        time: now(),
+        peak: S.currentCyclePeak,
+        drops: S.currentCycleDrops,
+        kg:   kg,
+      });
+
+      addHistoryRow(S.collectionLog[0]);
+      render();
+
+      setTimeout(() => {
+        S.lifecycle = 5;
+        S.currentCycleDrops = 0;
+        S.currentCyclePeak = 0;
+        addSMS('+91-9876543210',
+          `✅ Bin #1 emptied. Collection #${S.collections} complete. ${kg}kg e-waste collected.`, 'ok');
+        render();
+        toast('✅ Bin emptied! Collection #' + S.collections + ' logged.');
+
+        setTimeout(() => { S.lifecycle = 0; render(); }, 3000);
+      }, 1500);
+    }
+  }, 400);
+}
+
+function simTempAlert() {
+  S.temp = 52;
+  addSMS('+91-9876543210',
+    `🔥 HAZARD: Bin #1 temp is ${S.temp}°C! Possible battery/chemical danger. Immediate action needed.`, 'hazard');
+  render();
+  toast('🔥 High temperature alert sent!');
+  setTimeout(() => { S.temp = 28; render(); }, 6000);
+}
+
+// ════════════════════════════════════════════════
+//  HISTORY
+// ════════════════════════════════════════════════
+function addHistoryRow(col) {
+  const tbody = document.getElementById('historyBody');
+  if (tbody.children[0]?.textContent?.includes('No collections')) tbody.innerHTML = '';
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td style="color:var(--muted)">#${col.id}</td>
+    <td style="color:var(--text)">${col.time}</td>
+    <td style="color:var(--red)">${col.peak}%</td>
+    <td style="color:var(--amber)">${col.drops}</td>
+    <td style="color:var(--green)">${col.kg} kg</td>
+    <td><span class="sms-badge badge-ok">Collected</span></td>
+  `;
+  tbody.prepend(tr);
+}
+
+// ════════════════════════════════════════════════
+//  VALIDATE
+// ════════════════════════════════════════════════
+function validateCode() {
+  const raw = document.getElementById('codeInput').value.trim().toUpperCase();
+  const res = document.getElementById('v-result');
+  res.style.display = 'block';
+
+  if (!raw) {
+    res.className = 'err';
+    res.innerHTML = 'Please enter a code.';
+    return;
+  }
+
+  if (S.usedCodes.has(raw)) {
+    res.className = 'err';
+    res.innerHTML = `Code <strong>${raw}</strong> already redeemed.`;
+    return;
+  }
+
+  if (/^EW-\d{1,4}-\d+$/.test(raw)) {
+    const pts = Math.floor(Math.random() * 30) + 20;
+    const kg  = (Math.random() * 0.4 + 0.1).toFixed(2);
+    S.usedCodes.add(raw);
+    S.myPoints += pts;
+    S.myDrops++;
+    S.totalKg += parseFloat(kg);
+    res.className = 'ok';
+    res.innerHTML = `
+      ✅ Code <strong>${raw}</strong> validated!<br>
+      <div class="v-pts">+<span>${pts}</span> pts</div>
+      ${kg} kg e-waste logged. Thank you! ♻
+    `;
+    document.getElementById('codeInput').value = '';
+    render();
+    toast('🎉 +' + pts + ' points earned!');
+  } else {
+    res.className = 'err';
+    res.innerHTML = `Invalid code: <strong>${raw}</strong><br>Expected format: EW-XXXX-N`;
+  }
+}
+
+// ════════════════════════════════════════════════
+//  TABS
+// ════════════════════════════════════════════════
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const ids = ['monitor','sms','validate','history'];
+    t.classList.toggle('active', ids[i] === id);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+}
+
+// Enter key on code input
+document.getElementById('codeInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') validateCode();
+});
+
+// ── Init ────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
