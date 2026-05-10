@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoTrack Admin — Control Centre</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void:   #030608;
+  --bg:     #060d0a;
+  --s1:     #0a1610;
+  --s2:     #0f2018;
+  --s3:     #162a1e;
+  --s4:     #1d3528;
+  --bd:     #1a3326;
+  --bd2:    #224e36;
+
+  --green:  #00e676;
+  --green2: #00c85a;
+  --green3: rgba(0,230,118,.08);
+
+  --teal:   #00e5d4;
+  --teal2:  #00b8a9;
+  --teal3:  rgba(0,229,212,.08);
+
+  --amber:  #ffb700;
+  --red:    #ff3b3b;
+  --blue:   #4da6ff;
+  --pur:    #c084fc;
+
+  --tx:     #b8e8ce;
+  --tx2:    #70b88a;
+  --mu:     #2d5538;
+  --mu2:    #3d6a4e;
+
+  --mono: 'DM Mono', monospace;
+  --sans: 'Nunito', sans-serif;
+}
+
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html { font-size:15px; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--tx);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content:''; position:fixed; inset:0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,.04) 3px, rgba(0,0,0,.04) 4px);
+  pointer-events:none; z-index:0;
+}
+
+body::after {
+  content:''; position:fixed;
+  width:800px; height:800px;
+  background: radial-gradient(circle, rgba(0,230,118,.04) 0%, transparent 60%);
+  top:-300px; left:-200px;
+  pointer-events:none; z-index:0;
+}
+
+/* ══ LOGIN ═══════════════════════════════════ */
+#loginWrap {
+  position:fixed; inset:0; z-index:1000;
+  background:var(--bg);
+  display:flex; align-items:center; justify-content:center; padding:24px;
+}
+
+.login-card {
+  background:var(--s1); border:1px solid var(--bd);
+  border-radius:20px; padding:48px 44px 40px;
+  width:100%; max-width:400px; position:relative;
+  box-shadow:0 0 80px rgba(0,230,118,.05), 0 40px 80px rgba(0,0,0,.5);
+}
+
+.login-card::before {
+  content:''; position:absolute; top:-1px; left:15%; right:15%;
+  height:2px;
+  background:linear-gradient(90deg, transparent, var(--green), transparent);
+}
+
+.lc-head { text-align:center; margin-bottom:36px; }
+
+.lc-emblem {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:60px; height:60px; border:1.5px solid var(--green);
+  border-radius:14px; font-size:26px; margin-bottom:16px;
+  background:rgba(0,230,118,.08);
+  box-shadow:0 0 24px rgba(0,230,118,.2);
+}
+
+.lc-title { font-size:20px; font-weight:900; color:#fff; letter-spacing:-.4px; }
+.lc-sub { font-family:var(--mono); font-size:10px; color:var(--mu2); letter-spacing:2.5px; text-transform:uppercase; margin-top:6px; }
+
+.lf { margin-bottom:14px; }
+.lf label { font-family:var(--mono); font-size:10px; color:var(--mu2); text-transform:uppercase; letter-spacing:2px; display:block; margin-bottom:7px; }
+.lf input {
+  width:100%; background:var(--s2); border:1px solid var(--bd);
+  border-radius:10px; padding:12px 14px;
+  font-family:var(--mono); font-size:13px; color:var(--green);
+  outline:none; transition:all .2s;
+}
+.lf input::placeholder { color:var(--mu); }
+.lf input:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(0,230,118,.1); }
+
+.l-btn {
+  width:100%; background:var(--green); color:#000; border:none; border-radius:10px;
+  padding:14px; font-family:var(--sans); font-size:14px; font-weight:800;
+  cursor:pointer; margin-top:6px; transition:all .2s;
+  box-shadow:0 4px 20px rgba(0,230,118,.25);
+}
+.l-btn:hover  { background:var(--green2); box-shadow:0 6px 28px rgba(0,230,118,.35); }
+.l-btn:active { transform:scale(.98); }
+
+.l-err {
+  font-family:var(--mono); font-size:11px; color:var(--red);
+  text-align:center; margin-top:12px; display:none;
+  background:rgba(255,59,59,.08); border:1px solid rgba(255,59,59,.2);
+  border-radius:8px; padding:8px;
+}
+.l-hint { font-family:var(--mono); font-size:10px; color:var(--mu); text-align:center; margin-top:12px; letter-spacing:1px; }
+
+/* ══ LAYOUT ════════════════════════════════ */
+#dash { display:none; position:relative; z-index:1; }
+
+.topbar {
+  position:sticky; top:0; z-index:200;
+  background:rgba(6,13,10,.95); backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--bd); height:52px;
+  display:flex; align-items:center; padding:0 24px;
+  justify-content:space-between; gap:12px;
+}
+
+.tb-left { display:flex; align-items:center; gap:14px; }
+
+.tb-logo {
+  font-size:16px; font-weight:900; color:#fff;
+  display:flex; align-items:center; gap:10px;
+}
+
+.tb-logo-mark {
+  width:32px; height:32px; border:1.5px solid var(--green);
+  border-radius:8px; display:flex; align-items:center; justify-content:center;
+  font-size:15px; background:rgba(0,230,118,.08);
+  box-shadow:0 0 12px rgba(0,230,118,.15);
+}
+
+.tb-sep { width:1px; height:22px; background:var(--bd); }
+
+.tb-node {
+  font-family:var(--mono); font-size:11px; color:var(--mu2);
+  display:flex; align-items:center; gap:6px;
+}
+
+.node-dot {
+  width:7px; height:7px; border-radius:50%;
+  background:var(--green); flex-shrink:0;
+  box-shadow:0 0 8px var(--green);
+  animation:ndpulse 2.5s ease-in-out infinite;
+}
+@keyframes ndpulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+.tb-right { display:flex; align-items:center; gap:8px; }
+
+.tb-ip {
+  font-family:var(--mono); font-size:11px; color:var(--green);
+  background:var(--green3); border:1px solid rgba(0,230,118,.2);
+  border-radius:6px; padding:5px 10px; letter-spacing:.5px;
+}
+
+.tb-btn {
+  font-family:var(--mono); font-size:11px; color:var(--mu2);
+  background:transparent; border:1px solid var(--bd); border-radius:6px;
+  padding:6px 12px; cursor:pointer; letter-spacing:1px;
+  text-transform:uppercase; text-decoration:none;
+  transition:all .2s;
+}
+.tb-btn:hover { border-color:var(--green); color:var(--green); }
+.tb-btn.out:hover { border-color:var(--red); color:var(--red); }
+
+/* ── LAYOUT ── */
+.layout { display:flex; min-height:calc(100vh - 52px); }
+
+.sb {
+  width:210px; flex-shrink:0; background:var(--s1);
+  border-right:1px solid var(--bd); padding:16px 10px;
+  display:flex; flex-direction:column;
+  position:sticky; top:52px; height:calc(100vh - 52px); overflow-y:auto;
+}
+.sb::-webkit-scrollbar { width:0; }
+
+.sb-label {
+  font-family:var(--mono); font-size:9px; color:var(--mu);
+  text-transform:uppercase; letter-spacing:2.5px;
+  padding:0 10px; margin:16px 0 6px;
+}
+
+.sb-item {
+  font-size:13px; font-weight:600; color:var(--mu2);
+  display:flex; align-items:center; gap:10px;
+  padding:9px 10px; border-radius:8px; cursor:pointer;
+  transition:all .15s; border:none; background:transparent;
+  width:100%; text-align:left; margin-bottom:2px;
+}
+.sb-item:hover { background:var(--s2); color:var(--tx); }
+.sb-item.active { background:var(--s2); color:var(--green); border:1px solid rgba(0,230,118,.15); }
+
+.sb-icon { font-size:14px; width:18px; text-align:center; flex-shrink:0; }
+
+.sb-ct {
+  margin-left:auto; font-family:var(--mono); font-size:10px;
+  border-radius:8px; padding:2px 7px; min-width:20px; text-align:center;
+}
+.ct-r { background:rgba(255,59,59,.12); color:var(--red); border:1px solid rgba(255,59,59,.25); }
+.ct-g { background:rgba(0,230,118,.08); color:var(--green); border:1px solid rgba(0,230,118,.25); }
+.ct-a { background:rgba(255,183,0,.1); color:var(--amber); border:1px solid rgba(255,183,0,.25); }
+.ct-t { background:rgba(0,229,212,.08); color:var(--teal); border:1px solid rgba(0,229,212,.2); }
+
+.sb-footer {
+  margin-top:auto; padding:12px 10px;
+  border-top:1px solid var(--bd);
+  font-family:var(--mono); font-size:10px;
+  color:var(--mu); line-height:1.8; letter-spacing:.5px;
+}
+
+/* ── MAIN ── */
+.main { flex:1; padding:24px; max-width:calc(100vw - 210px); overflow:hidden; }
+.panel { display:none; }
+.panel.active { display:block; }
+
+.ph { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:12px; }
+.ph h2 { font-size:22px; font-weight:900; color:#fff; letter-spacing:-.5px; }
+.ph .sub { font-family:var(--mono); font-size:11px; color:var(--mu2); margin-top:4px; letter-spacing:.5px; }
+
+/* ── STAT ROW ── */
+.stat-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:12px; margin-bottom:20px; }
+
+.stat {
+  background:var(--s1); border:1px solid var(--bd);
+  border-radius:14px; padding:18px 16px;
+  position:relative; overflow:hidden;
+  transition:border-color .2s, transform .2s;
+}
+.stat:hover { border-color:var(--bd2); transform:translateY(-1px); }
+.stat::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+.st-green::before { background:var(--green); }
+.st-teal::before  { background:var(--teal); }
+.st-amber::before { background:var(--amber); }
+.st-red::before   { background:var(--red); }
+.st-blue::before  { background:var(--blue); }
+
+.stat-val { font-family:var(--sans); font-size:30px; font-weight:900; line-height:1; margin-bottom:6px; }
+.st-green .stat-val { color:var(--green); }
+.st-teal  .stat-val { color:var(--teal); }
+.st-amber .stat-val { color:var(--amber); }
+.st-red   .stat-val { color:var(--red); }
+.st-blue  .stat-val { color:var(--blue); }
+.stat-lbl { font-family:var(--mono); font-size:10px; color:var(--mu2); text-transform:uppercase; letter-spacing:1.5px; }
+.stat-sub { position:absolute; top:16px; right:14px; font-family:var(--mono); font-size:10px; color:var(--mu); }
+
+/* ── CARD ── */
+.card { background:var(--s1); border:1px solid var(--bd); border-radius:16px; padding:20px; margin-bottom:16px; }
+.card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:8px; }
+.ch { font-family:var(--mono); font-size:10px; color:var(--mu2); text-transform:uppercase; letter-spacing:2px; display:flex; align-items:center; gap:8px; }
+.ch-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+
+/* ── TIMELINE ── */
+.tl { display:flex; align-items:center; overflow-x:auto; padding-bottom:4px; gap:0; }
+.tl::-webkit-scrollbar { height:0; }
+.tl-s { display:flex; flex-direction:column; align-items:center; gap:7px; flex:1; min-width:76px; position:relative; }
+.tl-s:not(:last-child)::after { content:''; position:absolute; top:17px; left:calc(50% + 17px); width:calc(100% - 34px); height:1px; background:var(--bd); transition:background .5s; }
+.tl-s.done:not(:last-child)::after { background:var(--green2); }
+.tl-ic { width:34px; height:34px; border-radius:50%; border:1.5px solid var(--bd); background:var(--s2); display:flex; align-items:center; justify-content:center; font-size:14px; z-index:1; transition:all .4s; }
+.tl-s.done .tl-ic { border-color:var(--green); background:rgba(0,230,118,.08); box-shadow:0 0 14px rgba(0,230,118,.22); }
+.tl-s.cur  .tl-ic { border-color:var(--amber); background:rgba(255,183,0,.08); animation:glowA 1.4s ease-in-out infinite; }
+@keyframes glowA { 0%,100%{box-shadow:0 0 0 0 rgba(255,183,0,.4)} 50%{box-shadow:0 0 0 8px rgba(255,183,0,0)} }
+.tl-lbl { font-family:var(--mono); font-size:8.5px; color:var(--mu); text-transform:uppercase; letter-spacing:.5px; text-align:center; line-height:1.3; }
+.tl-s.done .tl-lbl { color:var(--green); }
+.tl-s.cur  .tl-lbl { color:var(--amber); }
+
+/* ── BIN ── */
+.bin-row { display:flex; gap:22px; align-items:center; flex-wrap:wrap; }
+.bin-col { display:flex; flex-direction:column; align-items:center; gap:9px; }
+.bin-outer { width:86px; position:relative; }
+.bin-lid { width:94px; height:12px; background:var(--s3); border:1.5px solid var(--bd); border-radius:6px 6px 0 0; margin:0 auto; transition:transform .4s; transform-origin:right center; }
+.bin-body { width:80px; height:132px; border:1.5px solid var(--bd); border-top:none; border-radius:0 0 13px 13px; background:var(--s2); position:relative; overflow:hidden; margin:0 auto; }
+.bin-fill { position:absolute; bottom:0; left:0; right:0; border-radius:0 0 11px 11px; transition:height 1.2s cubic-bezier(.4,0,.2,1), background .5s; }
+.bin-pct { font-family:var(--mono); font-size:22px; font-weight:600; transition:color .5s; }
+.bin-tag { font-family:var(--mono); font-size:9px; font-weight:500; padding:4px 12px; border-radius:20px; text-transform:uppercase; letter-spacing:1.5px; }
+
+.info-grid { flex:1; min-width:200px; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.ib { background:var(--s2); border:1px solid var(--bd); border-radius:10px; padding:13px; }
+.ib-val { font-family:var(--mono); font-size:18px; font-weight:600; color:#fff; line-height:1; }
+.ib-lbl { font-family:var(--mono); font-size:9px; color:var(--mu); text-transform:uppercase; letter-spacing:1.5px; margin-top:5px; }
+
+.sim-area { padding-top:16px; margin-top:16px; border-top:1px solid var(--bd); }
+.sim-label { font-family:var(--mono); font-size:9px; color:var(--mu); letter-spacing:2.5px; text-transform:uppercase; margin-bottom:10px; }
+.actions { display:flex; gap:8px; flex-wrap:wrap; }
+
+.btn { font-family:var(--mono); font-size:10px; font-weight:500; padding:8px 14px; border-radius:7px; border:none; cursor:pointer; letter-spacing:1.5px; text-transform:uppercase; transition:all .15s; display:inline-flex; align-items:center; gap:5px; }
+.btn:active { transform:scale(.97); }
+.btn-g { background:rgba(0,230,118,.09); color:var(--green); border:1px solid rgba(0,230,118,.25); }
+.btn-t { background:rgba(0,229,212,.09); color:var(--teal); border:1px solid rgba(0,229,212,.25); }
+.btn-a { background:rgba(255,183,0,.09); color:var(--amber); border:1px solid rgba(255,183,0,.25); }
+.btn-r { background:rgba(255,59,59,.09); color:var(--red); border:1px solid rgba(255,59,59,.25); }
+.btn-b { background:rgba(77,166,255,.09); color:var(--blue); border:1px solid rgba(77,166,255,.25); }
+.btn-g:hover { background:rgba(0,230,118,.18); }
+.btn-t:hover { background:rgba(0,229,212,.18); }
+.btn-a:hover { background:rgba(255,183,0,.18); }
+.btn-r:hover { background:rgba(255,59,59,.18); }
+.btn-b:hover { background:rgba(77,166,255,.18); }
+
+/* ── SERIAL ── */
+#serial { background:var(--void); border:1px solid var(--bd); border-radius:10px; padding:16px; font-family:var(--mono); font-size:11.5px; color:#5aff90; height:200px; overflow-y:auto; line-height:1.9; letter-spacing:.3px; }
+#serial::-webkit-scrollbar { width:4px; }
+#serial::-webkit-scrollbar-thumb { background:var(--bd); border-radius:2px; }
+
+/* ── WIFI CARD ── */
+.wifi-card { background:var(--s2); border:1px solid var(--bd); border-radius:12px; padding:16px 18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+.wf-left { display:flex; align-items:center; gap:10px; }
+.wf-icon { width:38px; height:38px; background:rgba(0,230,118,.1); border:1px solid rgba(0,230,118,.25); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.wf-title { font-size:14px; font-weight:700; color:#fff; }
+.wf-sub { font-family:var(--mono); font-size:11px; color:var(--mu2); margin-top:2px; }
+.wf-badge { font-family:var(--mono); font-size:11px; padding:5px 12px; border-radius:7px; font-weight:600; }
+.wf-badge.online  { background:rgba(0,230,118,.1); color:var(--green); border:1px solid rgba(0,230,118,.3); }
+.wf-badge.offline { background:rgba(255,59,59,.1); color:var(--red); border:1px solid rgba(255,59,59,.3); }
+
+/* ── ALERT LOG ── */
+.sms-list { display:flex; flex-direction:column; gap:8px; max-height:380px; overflow-y:auto; }
+.sms-list::-webkit-scrollbar { width:3px; }
+.sms-list::-webkit-scrollbar-thumb { background:var(--bd); border-radius:2px; }
+.sms-item { background:var(--s2); border:1px solid var(--bd); border-radius:10px; padding:12px 14px; display:flex; gap:12px; animation:slideIn .3s ease; position:relative; overflow:hidden; }
+@keyframes slideIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:none} }
+.sms-item::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:3px 0 0 3px; }
+.sms-item.full::before   { background:var(--red); }
+.sms-item.ok::before     { background:var(--green); }
+.sms-item.hazard::before { background:var(--amber); }
+.sms-item.info::before   { background:var(--teal); }
+.si-icon { font-size:17px; flex-shrink:0; margin-top:2px; padding-left:6px; }
+.si-body { flex:1; }
+.si-hdr  { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+.si-ch   { font-family:var(--mono); font-size:11px; color:var(--mu2); }
+.si-t    { font-family:var(--mono); font-size:10px; color:var(--mu); margin-left:auto; }
+.si-msg  { font-family:var(--mono); font-size:12px; color:var(--tx); line-height:1.5; }
+
+.badge { font-family:var(--mono); font-size:9px; font-weight:500; padding:2px 8px; border-radius:10px; letter-spacing:1px; text-transform:uppercase; }
+.badge.full   { background:rgba(255,59,59,.12); color:var(--red); border:1px solid rgba(255,59,59,.3); }
+.badge.ok     { background:rgba(0,230,118,.1); color:var(--green); border:1px solid rgba(0,230,118,.3); }
+.badge.hazard { background:rgba(255,183,0,.1); color:var(--amber); border:1px solid rgba(255,183,0,.3); }
+.badge.info   { background:rgba(0,229,212,.08); color:var(--teal); border:1px solid rgba(0,229,212,.2); }
+
+/* ── TABLE ── */
+.tbl-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12px; }
+th { text-align:left; padding:10px 12px; color:var(--mu); font-weight:400; font-size:9.5px; text-transform:uppercase; letter-spacing:2px; border-bottom:1px solid var(--bd); }
+td { padding:11px 12px; border-bottom:1px solid rgba(26,51,38,.5); vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+tr { transition:background .12s; }
+tr:hover td { background:var(--s2); }
+.empty-td { color:var(--mu); padding:28px 12px !important; text-align:center; }
+
+/* ── DROP LIST ── */
+.drop-list { display:flex; flex-direction:column; gap:7px; max-height:360px; overflow-y:auto; }
+.drop-list::-webkit-scrollbar { width:3px; }
+.drop-list::-webkit-scrollbar-thumb { background:var(--bd); border-radius:2px; }
+.drop-row { background:var(--s2); border:1px solid var(--bd); border-radius:9px; padding:10px 14px; display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:14px; animation:slideIn .3s ease; }
+.dr-code { font-size:20px; font-weight:700; color:var(--green); letter-spacing:3px; font-family:var(--mono); }
+.dr-meta { font-size:11px; color:var(--mu2); font-family:var(--mono); }
+.dr-g    { font-size:11px; color:var(--amber); font-family:var(--mono); }
+.dr-pts  { font-size:12px; font-weight:600; color:var(--green); font-family:var(--mono); }
+
+/* ── USERS PANEL ── */
+.users-search { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+.search-input {
+  flex:1; min-width:200px;
+  background:var(--s2); border:1px solid var(--bd);
+  border-radius:8px; padding:9px 14px;
+  font-family:var(--mono); font-size:12px; color:var(--green);
+  outline:none; transition:border-color .2s;
+}
+.search-input::placeholder { color:var(--mu); }
+.search-input:focus { border-color:var(--green); }
+
+.users-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:12px; margin-top:16px;
+  max-height:540px; overflow-y:auto; padding-right:4px;
+}
+.users-grid::-webkit-scrollbar { width:3px; }
+.users-grid::-webkit-scrollbar-thumb { background:var(--bd); border-radius:2px; }
+
+.user-card {
+  background:var(--s2); border:1px solid var(--bd);
+  border-radius:12px; padding:16px;
+  transition:border-color .2s, transform .2s; position:relative;
+}
+.user-card:hover { border-color:var(--bd2); transform:translateY(-1px); }
+
+.uc-top { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.uc-avatar {
+  width:40px; height:40px; border-radius:50%; flex-shrink:0;
+  background:linear-gradient(135deg, var(--green), var(--teal));
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; font-weight:900; color:#000;
+}
+.uc-name { font-size:13px; font-weight:700; color:#fff; line-height:1.3; }
+.uc-phone { font-family:var(--mono); font-size:10px; color:var(--mu2); margin-top:2px; }
+
+.uc-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px; background:var(--bd); border-radius:8px; overflow:hidden; }
+.ucs { background:var(--s1); padding:10px 6px; text-align:center; }
+.ucs-val { font-family:var(--mono); font-size:16px; font-weight:600; color:var(--green); }
+.ucs-lbl { font-family:var(--mono); font-size:8px; color:var(--mu); text-transform:uppercase; letter-spacing:1px; margin-top:3px; }
+
+.uc-badge {
+  position:absolute; top:12px; right:12px;
+  font-family:var(--mono); font-size:8px; padding:2px 7px;
+  border-radius:10px; letter-spacing:1px; text-transform:uppercase;
+}
+.uc-badge.top { background:rgba(255,183,0,.12); color:var(--amber); border:1px solid rgba(255,183,0,.3); }
+.uc-badge.new { background:rgba(0,229,212,.08); color:var(--teal); border:1px solid rgba(0,229,212,.2); }
+
+canvas { display:block; width:100%; }
+
+/* ── ALERT BANNER ── */
+.alert-bar { background:rgba(255,59,59,.07); border:1px solid rgba(255,59,59,.3); border-radius:12px; padding:14px 18px; display:flex; align-items:center; gap:12px; margin-bottom:16px; animation:slideIn .3s ease; }
+.ab-close { margin-left:auto; background:none; border:none; color:var(--mu); font-size:16px; cursor:pointer; transition:color .2s; }
+.ab-close:hover { color:var(--red); }
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ════════════════════════════════ -->
+<div id="loginWrap">
+  <div class="login-card">
+    <div class="lc-head">
+      <div class="lc-emblem">♻️</div>
+      <div class="lc-title">Admin Access</div>
+      <div class="lc-sub">EcoTrack · Control Centre</div>
+    </div>
+    <div class="lf">
+      <label>Username</label>
+      <input type="text" id="l-user" placeholder="admin" autocomplete="off">
+    </div>
+    <div class="lf">
+      <label>Password</label>
+      <input type="password" id="l-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="l-btn" onclick="doLogin()">Sign In →</button>
+    <div class="l-err" id="l-err"></div>
+    <p class="l-hint">Default: admin / ecotrack2024</p>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD ════════════════════════════ -->
+<div id="dash">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-logo">
+        <div class="tb-logo-mark">♻️</div>
+        EcoTrack
+      </div>
+      <div class="tb-sep"></div>
+      <div class="tb-node">
+        <div class="node-dot"></div>
+        BIN-001 Online
+      </div>
+    </div>
+    <div class="tb-right">
+      <div class="tb-ip" id="binIP">192.168.1.105</div>
+      <a href="ecotrack-user.html" class="tb-btn">User Portal →</a>
+      <button class="tb-btn out" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <div class="sb">
+      <div class="sb-label">Main</div>
+      <button class="sb-item active" onclick="nav('overview',this)">
+        <span class="sb-icon">📊</span> Overview
+      </button>
+      <button class="sb-item" onclick="nav('bin',this)">
+        <span class="sb-icon">🗑️</span> Bin Status
+      </button>
+      <button class="sb-item" onclick="nav('drops',this)">
+        <span class="sb-icon">📦</span> Drop Log
+        <span class="sb-ct ct-g" id="dropCt">0</span>
+      </button>
+      <button class="sb-item" onclick="nav('alerts',this)">
+        <span class="sb-icon">🔔</span> Alerts
+        <span class="sb-ct ct-r" id="alertCt">0</span>
+      </button>
+
+      <div class="sb-label">Manage</div>
+      <button class="sb-item" onclick="nav('users',this)">
+        <span class="sb-icon">👥</span> Users
+        <span class="sb-ct ct-t" id="userCt">0</span>
+      </button>
+      <button class="sb-item" onclick="nav('codes',this)">
+        <span class="sb-icon">🔑</span> Codes
+      </button>
+      <button class="sb-item" onclick="nav('serial',this)">
+        <span class="sb-icon">💻</span> Serial Log
+      </button>
+      <button class="sb-item" onclick="nav('settings',this)">
+        <span class="sb-icon">⚙️</span> Settings
+      </button>
+
+      <div class="sb-footer">
+        EcoTrack Admin v3.0<br>
+        ESP8266 WiFi IoT<br>
+        Block A · Lab 3
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+
+      <!-- ── OVERVIEW ── -->
+      <div class="panel active" id="p-overview">
+        <div class="ph">
+          <div>
+            <h2>Overview</h2>
+            <div class="sub">Real-time system status</div>
+          </div>
+          <button class="btn btn-g" onclick="refreshData()">↻ Refresh</button>
+        </div>
+
+        <div id="alertBanner" style="display:none">
+          <div class="alert-bar">
+            <span style="font-size:18px">⚠️</span>
+            <span id="alertMsg" style="font-family:var(--mono);font-size:12px;color:var(--red)"></span>
+            <button class="ab-close" onclick="document.getElementById('alertBanner').style.display='none'">✕</button>
+          </div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat st-green">
+            <div class="stat-sub">Today</div>
+            <div class="stat-val" id="ov-drops">0</div>
+            <div class="stat-lbl">Total Drops</div>
+          </div>
+          <div class="stat st-teal">
+            <div class="stat-sub">Active</div>
+            <div class="stat-val" id="ov-users">0</div>
+            <div class="stat-lbl">Registered Users</div>
+          </div>
+          <div class="stat st-amber">
+            <div class="stat-sub">kg</div>
+            <div class="stat-val" id="ov-kg">0.0</div>
+            <div class="stat-lbl">Waste Collected</div>
+          </div>
+          <div class="stat st-red">
+            <div class="stat-sub">%</div>
+            <div class="stat-val" id="ov-fill">0</div>
+            <div class="stat-lbl">Bin Fill Level</div>
+          </div>
+          <div class="stat st-blue">
+            <div class="stat-val" id="ov-pts">0</div>
+            <div class="stat-lbl">Points Issued</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div class="ch"><span class="ch-dot" style="background:var(--green)"></span> Collection Pipeline</div>
+          </div>
+          <div class="tl">
+            <div class="tl-s done" id="tl-0">
+              <div class="tl-ic">📡</div>
+              <div class="tl-lbl">WiFi<br>Connected</div>
+            </div>
+            <div class="tl-s done" id="tl-1">
+              <div class="tl-ic">🟢</div>
+              <div class="tl-lbl">Bin<br>Online</div>
+            </div>
+            <div class="tl-s cur" id="tl-2">
+              <div class="tl-ic">⏳</div>
+              <div class="tl-lbl">Awaiting<br>Drop</div>
+            </div>
+            <div class="tl-s" id="tl-3">
+              <div class="tl-ic">🔢</div>
+              <div class="tl-lbl">Code<br>Generated</div>
+            </div>
+            <div class="tl-s" id="tl-4">
+              <div class="tl-ic">✅</div>
+              <div class="tl-lbl">Points<br>Issued</div>
+            </div>
+            <div class="tl-s" id="tl-5">
+              <div class="tl-ic">📊</div>
+              <div class="tl-lbl">Logged</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div class="ch"><span class="ch-dot" style="background:var(--green)"></span> Weekly Drops</div>
+          </div>
+          <canvas id="weekChart" height="120"></canvas>
+        </div>
+
+      </div>
+
+      <!-- ── BIN STATUS ── -->
+      <div class="panel" id="p-bin">
+        <div class="ph"><div><h2>Bin Status</h2><div class="sub">Live sensor data · BIN-001</div></div></div>
+
+        <div class="card">
+          <div class="card-head">
+            <div class="ch"><span class="ch-dot" style="background:var(--green)"></span> Fill Level</div>
+          </div>
+          <div class="bin-row">
+            <div class="bin-col">
+              <div class="bin-outer">
+                <div class="bin-lid" id="binLid"></div>
+                <div class="bin-body">
+                  <div class="bin-fill" id="binFill" style="height:0%;background:var(--green)"></div>
+                </div>
+              </div>
+              <div class="bin-pct" id="binPct" style="color:var(--green)">0%</div>
+              <div class="bin-tag" id="binTag" style="background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.3)">Empty</div>
+            </div>
+            <div class="info-grid">
+              <div class="ib"><div class="ib-val" id="b-temp">28°C</div><div class="ib-lbl">Temperature</div></div>
+              <div class="ib"><div class="ib-val" id="b-humid">62%</div><div class="ib-lbl">Humidity</div></div>
+              <div class="ib"><div class="ib-val" id="b-dist">18cm</div><div class="ib-lbl">Distance</div></div>
+              <div class="ib"><div class="ib-val" id="b-drops">0</div><div class="ib-lbl">Total Drops</div></div>
+            </div>
+          </div>
+          <div class="sim-area">
+            <div class="sim-label">Simulate</div>
+            <div class="actions">
+              <button class="btn btn-g" onclick="simDrop()">+ Add Drop</button>
+              <button class="btn btn-a" onclick="simFill(60)">Set 60%</button>
+              <button class="btn btn-r" onclick="simFill(95)">Set 95% (Full)</button>
+              <button class="btn btn-t" onclick="simFill(0)">Reset Bin</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div class="ch"><span class="ch-dot" style="background:var(--teal)"></span> WiFi / Network</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="wifi-card">
+              <div class="wf-left">
+                <div class="wf-icon">📶</div>
+                <div>
+                  <div class="wf-title">Lab3_EcoNet</div>
+                  <div class="wf-sub">192.168.1.105 · RSSI: -52 dBm</div>
+                </div>
+              </div>
+              <div class="wf-badge online">Online</div>
+            </div>
+            <div class="wifi-card">
+              <div class="wf-left">
+                <div class="wf-icon">🖥️</div>
+                <div>
+                  <div class="wf-title">Admin Server</div>
+                  <div class="wf-sub">192.168.1.1 · Port 80</div>
+                </div>
+              </div>
+              <div class="wf-badge online">Reachable</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DROP LOG ── -->
+      <div class="panel" id="p-drops">
+        <div class="ph">
+          <div><h2>Drop Log</h2><div class="sub">All recorded drops</div></div>
+          <button class="btn btn-r" onclick="clearDrops()">Clear Log</button>
+        </div>
+        <div class="card">
+          <div class="drop-list" id="dropList">
+            <div style="font-family:var(--mono);font-size:12px;color:var(--mu);padding:20px;text-align:center">No drops recorded yet</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ALERTS ── -->
+      <div class="panel" id="p-alerts">
+        <div class="ph">
+          <div><h2>Alerts</h2><div class="sub">System notifications</div></div>
+          <button class="btn btn-r" onclick="clearAlerts()">Clear All</button>
+        </div>
+        <div class="card">
+          <div class="sms-list" id="smsList">
+            <div style="font-family:var(--mono);font-size:12px;color:var(--mu);padding:20px;text-align:center">No alerts yet</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── USERS ── -->
+      <div class="panel" id="p-users">
+        <div class="ph">
+          <div><h2>Registered Users</h2><div class="sub">All participants</div></div>
+        </div>
+        <div class="card">
+          <div class="users-search">
+            <input class="search-input" id="userSearch" placeholder="Search by name or phone…" oninput="renderUsers()">
+          </div>
+          <div class="users-grid" id="usersGrid">
+            <div style="font-family:var(--mono);font-size:12px;color:var(--mu);padding:20px;grid-column:1/-1;text-align:center">No users registered yet</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CODES ── -->
+      <div class="panel" id="p-codes">
+        <div class="ph">
+          <div><h2>Drop Codes</h2><div class="sub">Active OTP codes</div></div>
+          <button class="btn btn-g" onclick="genCode()">+ Generate Code</button>
+        </div>
+        <div class="card">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>Code</th><th>Points</th><th>Weight (g)</th><th>Status</th><th>Created</th></tr></thead>
+              <tbody id="codesTbl"><tr><td class="empty-td" colspan="5">No codes generated</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SERIAL LOG ── -->
+      <div class="panel" id="p-serial">
+        <div class="ph">
+          <div><h2>Serial Log</h2><div class="sub">ESP8266 output</div></div>
+          <button class="btn btn-r" onclick="document.getElementById('serial').innerHTML=''">Clear</button>
+        </div>
+        <div class="card">
+          <div id="serial"></div>
+          <div class="sim-area">
+            <div class="sim-label">Inject Log</div>
+            <div class="actions">
+              <button class="btn btn-g" onclick="serialLog('✓ Bin ready — waiting for drop…')">Ping</button>
+              <button class="btn btn-t" onclick="serialLog('→ WiFi reconnected to Lab3_EcoNet')">WiFi Event</button>
+              <button class="btn btn-a" onclick="serialLog('⚠ Fill level: 80% — consider emptying soon')">Fill Warning</button>
+              <button class="btn btn-r" onclick="serialLog('✗ CRITICAL: Fill level 95% — bin full!')">Full Alert</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SETTINGS ── -->
+      <div class="panel" id="p-settings">
+        <div class="ph"><div><h2>Settings</h2><div class="sub">System configuration</div></div></div>
+        <div class="card">
+          <div class="ch" style="margin-bottom:16px"><span class="ch-dot" style="background:var(--green)"></span> System Info</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="ib"><div class="ib-val">BIN-001</div><div class="ib-lbl">Device ID</div></div>
+            <div class="ib"><div class="ib-val">3.0.1</div><div class="ib-lbl">Firmware</div></div>
+            <div class="ib"><div class="ib-val">Block A</div><div class="ib-lbl">Location</div></div>
+            <div class="ib"><div class="ib-val">Lab 3</div><div class="ib-lbl">Room</div></div>
+          </div>
+          <div class="sim-area">
+            <div class="sim-label">Actions</div>
+            <div class="actions">
+              <button class="btn btn-t" onclick="alert('Reboot command sent to ESP8266')">Reboot Device</button>
+              <button class="btn btn-r" onclick="if(confirm('Reset all data?')){resetAll()}">Factory Reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /layout -->
+</div><!-- /dash -->
+
+<script>
+// ── AUTH ─────────────────────────────────
+function doLogin() {
+  const u = document.getElementById('l-user').value.trim();
+  const p = document.getElementById('l-pass').value;
+  const e = document.getElementById('l-err');
+  if (u === 'admin' && p === 'ecotrack2024') {
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('dash').style.display = 'block';
+    initDash();
+  } else {
+    e.textContent = 'Invalid username or password.';
+    e.style.display = 'block';
+  }
+}
+document.getElementById('l-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+function doLogout() {
+  document.getElementById('dash').style.display = 'none';
+  document.getElementById('loginWrap').style.display = 'flex';
+  document.getElementById('l-pass').value = '';
+  document.getElementById('l-err').style.display = 'none';
+}
+
+// ── DATA STORE ────────────────────────────
+const DATA = {
+  fillLevel: 22,
+  drops: [],
+  alerts: [],
+  users: [],
+  codes: {},
+  totalPts: 0,
+};
+
+const CODE_PRESETS = {
+  '1234':{ pts:50, grams:120 }, '5678':{ pts:30, grams:80 },
+  '9012':{ pts:70, grams:200 }, '4321':{ pts:40, grams:100 },
+  '8765':{ pts:60, grams:150 }, '1111':{ pts:25, grams:60 },
+  '2222':{ pts:45, grams:110 }, '3333':{ pts:80, grams:220 },
+};
+
+// ── NAV ───────────────────────────────────
+function nav(id, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('p-' + id).classList.add('active');
+  el.classList.add('active');
+  if (id === 'users') renderUsers();
+  if (id === 'codes') renderCodes();
+}
+
+// ── INIT ──────────────────────────────────
+function initDash() {
+  DATA.users = [
+    { name:'Priya Sharma',    phone:'9876543210', pts:180, drops:4, grams:510 },
+    { name:'Rahul Mehta',     phone:'9123456780', pts:120, drops:3, grams:320 },
+    { name:'Aisha Khan',      phone:'9988776655', pts:95,  drops:2, grams:220 },
+    { name:'Vikram Nair',     phone:'9012345678', pts:50,  drops:1, grams:120 },
+    { name:'Deepa Thomas',    phone:'9876012345', pts:210, drops:5, grams:640 },
+    { name:'Arjun Reddy',     phone:'9765432101', pts:70,  drops:2, grams:180 },
+  ];
+
+  DATA.drops = [
+    { code:'1234', user:'Priya Sharma',  pts:50,  grams:120, time:'10:32 AM' },
+    { code:'5678', user:'Rahul Mehta',   pts:30,  grams:80,  time:'11:15 AM' },
+    { code:'9012', user:'Deepa Thomas',  pts:70,  grams:200, time:'12:08 PM' },
+    { code:'4321', user:'Aisha Khan',    pts:40,  grams:100, time:'02:22 PM' },
+  ];
+
+  DATA.alerts = [
+    { type:'info',   icon:'📡', ch:'WiFi',  msg:'ESP8266 connected to Lab3_EcoNet · IP 192.168.1.105', time:'09:01 AM' },
+    { type:'ok',     icon:'✅', ch:'Drop',  msg:'New drop validated — +50 pts to Priya Sharma',        time:'10:32 AM' },
+    { type:'hazard', icon:'⚠️', ch:'Bin',   msg:'Fill level at 22% — all good',                        time:'11:00 AM' },
+  ];
+
+  DATA.totalPts = DATA.users.reduce((a,u) => a + u.pts, 0);
+  DATA.fillLevel = 22;
+  DATA.drops.forEach((_, i) => {
+    setTimeout(() => {
+      const s = document.getElementById('serial');
+      if (s) { s.innerHTML += `[${_.time}] DROP validated · code:${_.code} · +${_.pts}pts · user:${_.user}\n`; s.scrollTop = s.scrollHeight; }
+    }, i * 200);
+  });
+
+  updateOverview();
+  updateBin(DATA.fillLevel);
+  renderDrops();
+  renderAlerts();
+  renderUsers();
+  renderCodes();
+  drawWeekChart();
+  updateCounts();
+
+  const msgs = [
+    'EcoTrack ESP8266 v3.0 booting…',
+    'Connecting to Lab3_EcoNet…',
+    'WiFi connected · IP: 192.168.1.105',
+    'Ultrasonic sensor OK',
+    'System ready — awaiting drops',
+  ];
+  msgs.forEach((m, i) => {
+    setTimeout(() => {
+      const s = document.getElementById('serial');
+      if (s) { s.innerHTML += '[BOOT] ' + m + '\n'; s.scrollTop = s.scrollHeight; }
+    }, i * 150 + 800);
+  });
+}
+
+// ── OVERVIEW ─────────────────────────────
+function updateOverview() {
+  document.getElementById('ov-drops').textContent = DATA.drops.length;
+  document.getElementById('ov-users').textContent = DATA.users.length;
+  document.getElementById('ov-kg').textContent    = (DATA.drops.reduce((a,d)=>a+d.grams,0)/1000).toFixed(2);
+  document.getElementById('ov-fill').textContent  = DATA.fillLevel;
+  document.getElementById('ov-pts').textContent   = DATA.totalPts;
+
+  if (DATA.fillLevel >= 90) {
+    document.getElementById('alertBanner').style.display = 'flex';
+    document.getElementById('alertMsg').textContent = 'Bin is almost full (' + DATA.fillLevel + '%)! Please empty it soon.';
+  }
+}
+
+// ── BIN ───────────────────────────────────
+function updateBin(pct) {
+  DATA.fillLevel = Math.min(100, Math.max(0, pct));
+  document.getElementById('binFill').style.height = DATA.fillLevel + '%';
+  document.getElementById('binPct').textContent   = DATA.fillLevel + '%';
+  document.getElementById('b-dist').textContent   = Math.round(30 - DATA.fillLevel * 0.28) + 'cm';
+  document.getElementById('b-drops').textContent  = DATA.drops.length;
+  document.getElementById('ov-fill').textContent  = DATA.fillLevel;
+
+  let col, tagTxt, tagStyle;
+  if (DATA.fillLevel < 40)      { col='var(--green)'; tagTxt='OK'; tagStyle='background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.3)'; }
+  else if (DATA.fillLevel < 75) { col='var(--amber)'; tagTxt='Half Full'; tagStyle='background:rgba(255,183,0,.1);color:var(--amber);border:1px solid rgba(255,183,0,.3)'; }
+  else if (DATA.fillLevel < 90) { col='var(--amber)'; tagTxt='Nearly Full'; tagStyle='background:rgba(255,183,0,.1);color:var(--amber);border:1px solid rgba(255,183,0,.3)'; }
+  else { col='var(--red)'; tagTxt='FULL'; tagStyle='background:rgba(255,59,59,.1);color:var(--red);border:1px solid rgba(255,59,59,.3)'; }
+
+  document.getElementById('binFill').style.background = col;
+  document.getElementById('binPct').style.color       = col;
+  document.getElementById('binTag').textContent        = tagTxt;
+  document.getElementById('binTag').style.cssText      = tagStyle;
+
+  if (DATA.fillLevel >= 90) {
+    document.getElementById('binLid').style.transform = 'rotate(-30deg)';
+    addAlert('full','🚨','Bin Full','Bin fill level critical: '+DATA.fillLevel+'%');
+  } else {
+    document.getElementById('binLid').style.transform = 'none';
+  }
+}
+
+function simDrop() {
+  const pts    = [25,30,40,50,60,70,80][Math.floor(Math.random()*7)];
+  const grams  = pts * 2.4 | 0;
+  const code   = String(Math.floor(1000+Math.random()*9000));
+  const user   = DATA.users[Math.floor(Math.random()*DATA.users.length)];
+  const t      = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+
+  DATA.drops.unshift({ code, user: user.name, pts, grams, time:t });
+  user.pts   += pts;
+  user.drops += 1;
+  user.grams += grams;
+  DATA.totalPts += pts;
+  DATA.fillLevel = Math.min(100, DATA.fillLevel + Math.round(grams/50));
+
+  addAlert('ok','✅','Drop Validated','Code '+code+' → +'+pts+' pts to '+user.name);
+  serialLog('DROP validated · code:'+code+' · +'+pts+'pts · '+user.name);
+  updateBin(DATA.fillLevel);
+  updateOverview();
+  renderDrops();
+  updateCounts();
+
+  for (let i=3;i<=5;i++) {
+    document.getElementById('tl-'+i).classList.remove('done','cur');
+    document.getElementById('tl-'+i).classList.add(i===3?'cur':'');
+  }
+  setTimeout(() => {
+    [3,4,5].forEach(i => {
+      document.getElementById('tl-'+i).classList.remove('cur');
+      document.getElementById('tl-'+i).classList.add('done');
+    });
+    document.getElementById('tl-2').classList.remove('done');
+    document.getElementById('tl-2').classList.add('cur');
+  }, 1200);
+}
+
+function simFill(pct) { updateBin(pct); updateOverview(); serialLog('Bin fill set to '+pct+'%'); }
+
+// ── DROPS ─────────────────────────────────
+function renderDrops() {
+  const el = document.getElementById('dropList');
+  if (!DATA.drops.length) { el.innerHTML = '<div style="font-family:var(--mono);font-size:12px;color:var(--mu);padding:20px;text-align:center">No drops recorded</div>'; return; }
+  el.innerHTML = DATA.drops.map(d => `
+    <div class="drop-row">
+      <div class="dr-code">${d.code}</div>
+      <div><div style="font-size:13px;font-weight:700;color:#fff">${d.user}</div><div class="dr-meta">${d.time}</div></div>
+      <div class="dr-g">${d.grams}g</div>
+      <div class="dr-pts">+${d.pts} pts</div>
+    </div>`).join('');
+}
+
+function clearDrops() { if(confirm('Clear drop log?')) { DATA.drops=[]; renderDrops(); updateCounts(); } }
+
+// ── ALERTS ───────────────────────────────
+function addAlert(type, icon, ch, msg) {
+  const t = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  DATA.alerts.unshift({ type, icon, ch, msg, time:t });
+  renderAlerts();
+  updateCounts();
+}
+
+function renderAlerts() {
+  const el = document.getElementById('smsList');
+  if (!DATA.alerts.length) { el.innerHTML = '<div style="font-family:var(--mono);font-size:12px;color:var(--mu);padding:20px;text-align:center">No alerts</div>'; return; }
+  el.innerHTML = DATA.alerts.slice(0,30).map(a => `
+    <div class="sms-item ${a.type}">
+      <div class="si-icon">${a.icon}</div>
+      <div class="si-body">
+        <div class="si-hdr">
+          <span class="si-ch">${a.ch}</span>
+          <span class="badge ${a.type}">${a.type}</span>
+          <span class="si-t">${a.time}</span>
+        </div>
+        <div class="si-msg">${a.msg}</div>
+      </div>
+    </div>`).join('');
+}
+
+function clearAlerts() { DATA.alerts=[]; renderAlerts(); updateCounts(); }
+
+// ── USERS ─────────────────────────────────
+function renderUsers() {
+  const q    = (document.getElementById('userSearch')?.value || '').toLowerCase();
+  const list = DATA.users.filter(u => u.name.toLowerCase().includes(q) || u.phone.includes(q));
+  const el   = document.getElementById('usersGrid');
+  if (!el) return;
+  if (!list.length) { el.innerHTML = '<div style="font-family:var(--mono);font-size:12px;color:var(--mu);padding:20px;grid-column:1/-1;text-align:center">No users found</div>'; return; }
+  const sorted = [...list].sort((a,b) => b.pts - a.pts);
+  el.innerHTML = sorted.map((u, i) => `
+    <div class="user-card">
+      ${i===0 ? '<div class="uc-badge top">🏆 Top</div>' : u.drops<=1 ? '<div class="uc-badge new">New</div>' : ''}
+      <div class="uc-top">
+        <div class="uc-avatar">${u.name.charAt(0)}</div>
+        <div>
+          <div class="uc-name">${u.name}</div>
+          <div class="uc-phone">📱 ${u.phone}</div>
+        </div>
+      </div>
+      <div class="uc-stats">
+        <div class="ucs"><div class="ucs-val">${u.pts}</div><div class="ucs-lbl">Points</div></div>
+        <div class="ucs"><div class="ucs-val">${u.drops}</div><div class="ucs-lbl">Drops</div></div>
+        <div class="ucs"><div class="ucs-val">${u.grams}</div><div class="ucs-lbl">g</div></div>
+      </div>
+    </div>`).join('');
+}
+
+// ── CODES ─────────────────────────────────
+function genCode() {
+  const code   = String(Math.floor(1000+Math.random()*9000));
+  const pts    = [25,30,40,50,60,70,80][Math.floor(Math.random()*7)];
+  const grams  = pts * 2.4 | 0;
+  const t      = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  DATA.codes[code] = { pts, grams, status:'Active', time:t };
+  renderCodes();
+  serialLog('New code generated: '+code+' → '+pts+' pts / '+grams+'g');
+}
+
+function renderCodes() {
+  const tbody = document.getElementById('codesTbl');
+  const all   = Object.entries(DATA.codes);
+  if (!all.length) { tbody.innerHTML = '<tr><td class="empty-td" colspan="5">No codes generated</td></tr>'; return; }
+  tbody.innerHTML = all.reverse().map(([code, d]) => `
+    <tr>
+      <td style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--green);letter-spacing:3px">${code}</td>
+      <td style="color:var(--green)">+${d.pts}</td>
+      <td style="color:var(--amber)">${d.grams}g</td>
+      <td><span class="badge ${d.status==='Active'?'ok':'info'}">${d.status}</span></td>
+      <td style="color:var(--mu2)">${d.time}</td>
+    </tr>`).join('');
+}
+
+// ── COUNTS ───────────────────────────────
+function updateCounts() {
+  document.getElementById('dropCt').textContent  = DATA.drops.length;
+  document.getElementById('alertCt').textContent = DATA.alerts.filter(a=>a.type==='full'||a.type==='hazard').length;
+  document.getElementById('userCt').textContent  = DATA.users.length;
+}
+
+// ── SERIAL ───────────────────────────────
+function serialLog(msg) {
+  const s = document.getElementById('serial');
+  const t = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  s.innerHTML += `[${t}] ${msg}\n`;
+  s.scrollTop = s.scrollHeight;
+}
+
+// ── CHART ────────────────────────────────
+function drawWeekChart() {
+  const canvas = document.getElementById('weekChart');
+  const ctx    = canvas.getContext('2d');
+  const days   = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const vals   = [4, 7, 5, 9, 6, 3, DATA.drops.length];
+  const max    = Math.max(...vals, 1);
+  const W = canvas.offsetWidth || 300, H = 120;
+  canvas.width  = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  const pad = 32, bw = (W - pad*2) / days.length, gutter = 8;
+  ctx.clearRect(0,0,W,H);
+
+  vals.forEach((v, i) => {
+    const bh   = ((v / max) * (H - pad - 16));
+    const x    = pad + i * bw + gutter/2;
+    const y    = H - pad - bh;
+    const last = i === vals.length-1;
+    const grad = ctx.createLinearGradient(0, y, 0, H-pad);
+    grad.addColorStop(0, last ? 'rgba(0,229,212,.8)'  : 'rgba(0,230,118,.7)');
+    grad.addColorStop(1, last ? 'rgba(0,229,212,.15)' : 'rgba(0,230,118,.1)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect(x, y, bw-gutter, bh, 4);
+    ctx.fill();
+    ctx.fillStyle = last ? 'rgba(0,229,212,.9)' : 'rgba(112,184,138,.8)';
+    ctx.font = '9px DM Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(days[i], x + (bw-gutter)/2, H-pad+14);
+    ctx.fillText(v, x + (bw-gutter)/2, y-4);
+  });
+}
+
+// ── MISC ─────────────────────────────────
+function refreshData() { updateOverview(); renderDrops(); renderAlerts(); serialLog('Data refreshed manually'); }
+function resetAll() { DATA.drops=[]; DATA.alerts=[]; DATA.users=[]; DATA.codes={}; DATA.fillLevel=0; DATA.totalPts=0; updateBin(0); updateOverview(); renderDrops(); renderAlerts(); renderUsers(); renderCodes(); updateCounts(); serialLog('Factory reset performed'); }
+</script>
+</body>
+</html>
